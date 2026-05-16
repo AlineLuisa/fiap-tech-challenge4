@@ -188,27 +188,72 @@ if submitted:
         ]
         proba_dict = {cls: round(prob * 100, 2) for cls, prob in zip(target_names, prediction_proba)}
 
-    # ==================================================
-    # 6. EXIBIÇÃO DOS RESULTADOS
-    # ==================================================
-    st.subheader("📈 Resultado da Predição")
-    st.success(f"### 🧬 Nível de Obesidade Previsto: **{prediction}**")
+    # # ==================================================
+    # # 6. EXIBIÇÃO DOS RESULTADOS
+    # # ==================================================
+    # st.subheader("📈 Resultado da Predição")
+    # st.success(f"### 🧬 Nível de Obesidade Previsto: **{prediction}**")
 
-    with st.expander("🔍 Ver detalhes das probabilidades"):
-        st.write("Probabilidades por classe (%):")
-        st.dataframe(pd.DataFrame(proba_dict.items(), columns=["Classe", "Probabilidade (%)"]))
+    # with st.expander("🔍 Ver detalhes das probabilidades"):
+    #     st.write("Probabilidades por classe (%):")
+    #     st.dataframe(pd.DataFrame(proba_dict.items(), columns=["Classe", "Probabilidade (%)"]))
 
-    st.subheader("📊 Resumo das Informações Inseridas")
-    col5, col6 = st.columns(2)
-    with col5:
-        st.metric("Idade", f"{age} anos")
-        st.metric("Altura", f"{height:.2f} m")
-        st.metric("Peso", f"{weight:.1f} kg")
-        st.metric("IMC", f"{imc:.2f}")
-    with col6:
-        st.metric("Healthy Score", healthy_score)
-        st.metric("Índice de Sedentarismo", f"{sedentary_index:.2f}")
-        st.metric("Refeições principais/dia", ncp)
-        st.metric("Consumo de vegetais (escala 1-3)", fcvc)
+    # st.subheader("📊 Resumo das Informações Inseridas")
+    # col5, col6 = st.columns(2)
+    # with col5:
+    #     st.metric("Idade", f"{age} anos")
+    #     st.metric("Altura", f"{height:.2f} m")
+    #     st.metric("Peso", f"{weight:.1f} kg")
+    #     st.metric("IMC", f"{imc:.2f}")
+    # with col6:
+    #     st.metric("Healthy Score", healthy_score)
+    #     st.metric("Índice de Sedentarismo", f"{sedentary_index:.2f}")
+    #     st.metric("Refeições principais/dia", ncp)
+    #     st.metric("Consumo de vegetais (escala 1-3)", fcvc)
 
-    st.caption("Modelo treinado com Regressão Logística (acurácia ~94%) utilizando dados de estilo de vida e hábitos alimentares.")
+    # st.caption("Modelo treinado com Regressão Logística (acurácia ~94%) utilizando dados de estilo de vida e hábitos alimentares.")
+
+   # --- Dicionário de tradução para exibição amigável ---
+    translation_dict = {
+        "Insufficient_Weight": "Peso Insuficiente 🦴",
+        "Normal_Weight": "Peso Normal ✅",
+        "Obesity_Type_I": "Obesidade Grau I ⚠️",
+        "Obesity_Type_II": "Obesidade Grau II 🚨",
+        "Obesity_Type_III": "Obesidade Grau III 🔴",
+        "Overweight_Level_I": "Sobrepeso Grau I 📈",
+        "Overweight_Level_II": "Sobrepeso Grau II 📊"
+    }
+    
+    # Define a tradução baseada no que o modelo previu
+    result_display = translation_dict.get(prediction, prediction)
+
+    # --- Exibição de Resultados Adaptada ao Contexto de Saúde ---
+    st.write("---")
+    st.markdown(f"### 🧬 Resultado do Modelo:")
+    
+    # Exibe o card com o resultado bonito em português
+    st.success(f"## Nível Classificado: **{result_display}**")
+
+    # Reações personalizadas e empáticas baseadas na predição original (em inglês)
+    if prediction == "Normal_Weight":
+        st.balloons()  # Balões apenas para comemorar a saúde em dia!
+        st.info("💡 Parabéns! Seus hábitos atuais estão ajudando a manter seu peso em uma faixa saudável. Continue assim!")
+        
+    elif prediction == "Insufficient_Weight":
+        st.warning("⚠️ Atenção: O modelo indicou peso insuficiente. É recomendável consultar um nutricionista para avaliar sua ingestão calórica e de nutrientes de forma saudável.")
+        
+    elif "Overweight" in prediction:
+        st.warning("📊 Atenção: O modelo identificou um nível de sobrepeso. Pequenos ajustes na rotina alimentícia e a prática regular de exercícios podem ajudar a reverter esse quadro.")
+        
+    elif "Obesity" in prediction:
+        st.error("🚨 Alerta de Saúde: O modelo classificou seu perfil na faixa de Obesidade. Lembre-se de que a obesidade é uma condição médica complexa. Considerar o acompanhamento de profissionais de saúde (médicos e nutricionistas) é o melhor passo para cuidar do seu bem-estar.")
+
+    # Detalhes técnicos com os nomes das classes também traduzidos para ficar elegante
+    with st.expander("🔍 Detalhes Técnicos (Probabilidade por Classe)"):
+        st.write("Probabilidades calculadas pelo modelo para cada faixa:")
+        
+        # Mapeia as categorias para português na tabela de probabilidades
+        translated_target_names = [translation_dict.get(cls, cls) for cls in target_names]
+        proba_dict = {cls: f"{prob * 100:.2f}%" for cls, prob in zip(translated_target_names, prediction_proba)}
+        
+        st.dataframe(pd.DataFrame(proba_dict.items(), columns=["Classificação", "Confiança do Modelo"]))
