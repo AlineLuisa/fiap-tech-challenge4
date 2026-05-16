@@ -133,45 +133,44 @@ if submitted:
         smoke_encoded = binary_encode(smoke)
         scc_encoded = binary_encode(scc)
 
-        # --- Montar DataFrame no formato esperado pelo modelo ---
-        input_data = pd.DataFrame([{
-            "Gender": gender,               # não usado, mas mantido por compatibilidade
-            "Age": age,
-            "Height": height,
-            "Weight": weight,
-            "family_history_0": family_hist_encoded[0],
-            "family_history_1": family_hist_encoded[1],
-            "FAVC_0": favc_encoded[0],
-            "FAVC_1": favc_encoded[1],
-            "NCP": ncp,
-            "CAEC": caec,
-            "SMOKE_0": smoke_encoded[0],
-            "SMOKE_1": smoke_encoded[1],
-            "SCC_0": scc_encoded[0],
-            "SCC_1": scc_encoded[1],
-            "CALC": calc,
-            "MTRANS": mtrans,
-            "Obesity": "placeholder",      # dummy, apenas para estrutura
-            "imc": imc,
-            "Age_Group": "Young",           # dummy, não usado
-            "Healthy_Score": healthy_score,
-            "Sedentary_Index": sedentary_index,
-            "MTRANS_Code": mtrans_code,
-            "caec_code": caec_code,
-            "calc_code": calc_code,
-            "gender_binary": gender_binary
-        }])
+        # --- Montar Dicionário com absolutamente todas as colunas possíveis ---
+        # Inclui as 18 colunas finais E as 5 colunas fantasmas que o preprocessor exige na entrada
+        raw_input = {
+            # As 18 colunas que você quer no modelo final:
+            'Age': age,
+            'Height': height,
+            'family_history_0': family_hist_encoded[0],
+            'family_history_1': family_hist_encoded[1],
+            'FAVC_0': favc_encoded[0],
+            'FAVC_1': favc_encoded[1],
+            'NCP': ncp,
+            'SMOKE_0': smoke_encoded[0],
+            'SMOKE_1': smoke_encoded[1],
+            'SCC_0': scc_encoded[0],
+            'SCC_1': scc_encoded[1],
+            'imc': imc,
+            'Healthy_Score': healthy_score,
+            'Sedentary_Index': sedentary_index,
+            'MTRANS_Code': mtrans_code,
+            'caec_code': caec_code,
+            'calc_code': calc_code,
+            'gender_binary': gender_binary,
+            
+            # As 5 colunas que o preprocessor exige para não dar erro (alimentadas com os inputs atuais)
+            'Weight': weight,
+            'FCVC': fcvc,
+            'CH2O': ch2o,
+            'FAF': faf,
+            'TUE': tue
+        }
 
-        # --- Remover colunas que não são usadas pelo modelo ---
-        cols_to_drop = ["Gender", "CAEC", "CALC", "MTRANS", "Age_Group", "Weight", "TUE", "CH2O", "FAF", "FCVC", "Obesity"]
-        cols_to_drop = [col for col in cols_to_drop if col in input_data.columns]
-        X_input = input_data.drop(columns=cols_to_drop)
+        # Criar o DataFrame inicial
+        input_df = pd.DataFrame([raw_input])
 
-        # --- Garantir ordem correta das colunas (mesma ordem do treino) ---
-        # (O pipeline já faz isso automaticamente via ColumnTransformer, mas por segurança)
-        expected_columns = model.named_steps['preprocessor'].get_feature_names_out()
-        # O remainder 'passthrough' mantém as colunas não transformadas, então precisamos garantir que estão presentes
-        # Na prática, o pipeline lida com isso. Vamos apenas passar X_input.
+        # --- Reindexar dinamicamente conforme o que o Pipeline espera na ENTRADA ---
+        # Isso vai ordenar as colunas na ordem exata exigida pelo seu arquivo logreg_best_pipeline.joblib
+        expected_columns = model.named_steps['preprocessor'].feature_names_in_
+        X_input = input_df.reindex(columns=expected_columns)
 
         # --- Predição ---
         prediction = model.predict(X_input)[0]
